@@ -32,6 +32,8 @@ This work owes insights to a lot of various sources, but among them: Udacity cou
 
 ### Description of the pipeline
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=1YhSza1ysZg" target="_blank"><img src="http://img.youtube.com/vi/1YhSza1ysZg/0.jpg" alt="Canny detected challenge video" width="720" height="480" border="10" /></a>
+
 In the current pipeline implementation, lane detection pipeline became a road detection pipeline, because 
 in the projective space, a road can be tracked using three points: VP(vp_x, vp_y), LL(x2, y\_max), RL(x2', y\_max), where VP - vanishing point, LL - left lane point intersecting bottom of image, RL - as in LL, but for the right lane, x2 - x-coordinate where lane intersects the bottom image border (x1 belongs to the start of the line), y\_max height of the image and y-coordinate of the image bottom border (y-axis is top-down). 
 The road can be also modelled to an approximation as a triangle \<VPLLRL. This is quite good model to approximate the road near the car. Although, when displaying the lane lines, we cut off a tiny amount of the lane near the VP, so as to display it in the manner wished for.
@@ -44,16 +46,18 @@ Our pipeline consists of the following major stages:
 #### Preprocessing:
 1. Transformation to HSL color space. RGB image was transformed into HSL color space because there white and gray color channels can be selected separately. White can be chosen if lightness
  is large and gray can be selected when saturation is low.
+ <a href="http://www.youtube.com/watch?feature=player_embedded&v=lWbYE1MP-4I" target="_blank"><img src="http://img.youtube.com/vi/lWbYE1MP-4I/0.jpg"  alt="Challenge video in HLS color space" width="720" height="480" border="10" /></a>
 2. Image segmentation to white, gray, yellow and light-yellow color channels. Separation of yellow channel was complicated because the images have a lot of dry grass. To reduce the amount of image included into the color channel, it yello lines were detected using a yellow and a light-yellow channels.
 3. Features selected by colour channels were combined into a binary mask.
 4. Noise reduction of the lane and road binary masks using morphological open transform with cross kernel. It reduced the amount of edges detected and also enhanced road features near the vanishing points. It also closed small holes in the bitmask.
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=QulLlIX85ec" target="_blank"><img src="http://img.youtube.com/vi/QulLlIX85ec/0.jpg"  alt="Challenge video in HLS color space" width="720" height="480" border="10" /></a>
 Gaussian blurring, unsharp mask, contrast enhanced local histogram equalization, gray scale image combined with the bitmask, etc were tried, but in the end they were not needed.
 
 #### Line detection:
-
 1. Edge detection of the lane and road binary masks using Canny edge detection producing a set of edges.
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=EqBp1q1oWRk" target="_blank"><img src="http://img.youtube.com/vi/EqBp1q1oWRk/0.jpg" alt="Canny detected challenge video" width="720" height="480" border="10" /></a>
 2. Line detection based on edges using probabilistic Hough transform producing a set of lines.
-
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=b1GgHqmoPIw" target="_blank"><img src="http://img.youtube.com/vi/b1GgHqmoPIw/0.jpg" alt="Hough lane detection challenge video" width="720" height="480" border="10" /></a>
 #### Road detection:
 
 1. Angular filtering of lines that are too horizontal or too vertical.
@@ -62,7 +66,7 @@ Gaussian blurring, unsharp mask, contrast enhanced local histogram equalization,
 1. Conversion of filtered lines to Hough space, where x is slope and y is intercept.
 2. Fitting Hough space points using RANSAC regressor and with a high residual threshold (120) and line lengths as weights. High threshold was needed for exploring larger solution space and proved to be essential for the performance of the vanishing point detection. Loss function was L1.
 3. Outliers determined by RANSAC are removed from the line set (I confirmed that same outliers are actually removed by later filtering steps as well, but it is preferable to refine the line set as early as possible. 
-
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=0aWgaiGCssY" target="_blank"><img src="http://img.youtube.com/vi/0aWgaiGCssY/0.jpg" alt="Hough lane detection challenge video" width="720" height="480" border="10" /></a>
 #### Lane detection first phase:
 Uses the previously detected vanishing point (VP) to classify lines to lanes:
 ##### Initial filtering:
@@ -82,9 +86,15 @@ Uses the previously detected vanishing point (VP) to classify lines to lanes:
 5. Fit again the set of lines to the lane, as in step 3.
 6. Update the buffer of X2 coordinate, replacing the last one, while backtracking and recalculating the running average of X2.
 7. Recalculate vanishing point of lanes and add it to the finite vanishing points buffer, while calculating the running average of the vanishing points.
+
+Hough detected lines along with lanes: <a href="http://www.youtube.com/watch?feature=player_embedded&v=OmyBP37uh8o" target="_blank"><img src="http://img.youtube.com/vi/OmyBP37uh8o/0.jpg" alt="Lange and line detection of challenge video" width="720" height="480" border="10" /></a>
+
 #### Annotate image with detected lanes.
 
-Further more detailed information can be found in the comments of the code.
+Video: green lines belong to left lane, blue lines to right lane. Lanes are colored red. Blue circle is the vanishing point detected in the hough space of the lines. The pink circle is the vanishing point calculated from the intersection of lanes.
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=MKLiFE1GPXw" target="_blank"><img src="http://img.youtube.com/vi/MKLiFE1GPXw/0.jpg" alt="Hough lane detection challenge video" width="720" height="480" border="10" /></a>
+
+Further more detailed information can be found in the comments of the source code.
 
 ### Shortcomings
 
@@ -92,6 +102,6 @@ One of the main lessons was the importance of texture analysis and of the featur
 
 ### Possible improvements
 
-* Probabilistic tracking of the features, for example using some Kalman filter or some other Bayesian filter would make the pipeline more stable and also reduce the amount of fixed parameters and make it possible to incorporate previous knowledge into the model in a more intelligent manner.
+* Probabilistic tracking of the features, for example using a Kalman filter or some other Bayesian filter would make the pipeline more stable and also reduce the amount of fixed parameters and make it possible to incorporate previous knowledge into the model in a more intelligent manner.
 * Vanishing point detection and filtering of lines for the lanes could all be done within the Hough transform algorithm. This would make the lane detection faster and more efficient.
 * Besides boolean filtering, voting should also be used for deciding which lines are to be declared outlier and which not.
