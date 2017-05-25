@@ -27,6 +27,7 @@ As in project 4 we will be doing advanced lane tracking, in this project we will
 #### Acknowledgements
 This work owes insights to a lot of various sources, but among them: Udacity course materials, OpenCV documentation, existing attempts and tips by fellow students David Lichtenberg, Kirill Danilyuk, Kyle Martin, Kyle Stewart-Frantz, Alex Staravoitau.
 
+Note: images in this document are actually links to Youtube videos.
 
 ## Reflection
 
