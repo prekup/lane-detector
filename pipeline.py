@@ -111,6 +111,7 @@ class Pipeline:
             print("width ", width, " height ", height, "ulx uly urx uly", ulx, uly, urx, ury)
         self.initial_roi = np.array([[(0, height), (ulx, uly), (urx, ury), (width, height)]], dtype=np.int32)
         self.road = Road(self)
+        print('init')
         self.initialized = True
 
     def convert_to_hls(self, image):
@@ -238,6 +239,7 @@ def convert_to_2d(arrays):
     :return: 
     """
     return np.atleast_2d(arrays).T
+
 
 
 class Road:
@@ -435,14 +437,13 @@ class Road:
 
     def update_average_vanishing_point(self, new_val):
         self.avg_vp = Road._update_average_array(self.vanishing_point_buffer, Lane.MOVING_AVERAGE_WINDOW,
-                                                 self.avg_vp, Road.MAX_VP_X_DEVIATION,
-                                                 Road.MAX_VP_Y_SHRINKING_DEVIATION,
-                                                 Road.MAX_VP_Y_GROWING_DEVIATION, new_val)
+                                           self.avg_vp, Road.MAX_VP_X_DEVIATION, Road.MAX_VP_Y_SHRINKING_DEVIATION,
+                                           Road.MAX_VP_Y_GROWING_DEVIATION, new_val)
         return self.avg_vp
 
     @staticmethod
     def _update_average_array(queue, max_num, avg, max_x_deviation, max_y_shrinking_deviation, max_y_growing_deviation,
-                              new_val):
+                             new_val):
         """
         Update moving average of a fixed length queue
         :param queue: fixed length queue
@@ -486,8 +487,8 @@ class Lane:
     MAX_LINE_ANGLE_TO_LANE_OUT = 0.28
     MAX_DISTANCE_TO_LANE_FROM_ROAD = 30
     MAX_DISTANCE_TO_LANE_TO_ROAD = 15  # 15
-    MOVING_AVERAGE_WINDOW = 20
-    MAX_X2_DEVIATION = 200
+    MOVING_AVERAGE_WINDOW = 10
+    MAX_X2_DEVIATION = 100
 
     def __init__(self, road, is_right_lane=False):
         """
@@ -667,21 +668,30 @@ class Lane:
         :return: 
         """
         num = len(queue)
-        new_avg = new_val
-        if num > 0:
-            is_updatable = max_deviation > int(abs(queue[-1] - new_val))
-            if not is_updatable:
-                return avg
+        new_avg = avg
+        if num == 0:
+            queue.append(new_val)            
+            new_avg = new_val
+        elif num > 0:
+            last_value = None
             if replace_last:
                 last_value = queue.pop()
-                new_avg = (avg * num - last_value + new_val) / num
-            elif num == max_num:
-                first_sample = queue.popleft()
-                new_avg = (avg * num + new_val - first_sample) / num
-            elif num < max_num:
-                new_avg = (avg * num + new_val) / (num + 1)
-        queue.append(new_val)
+                num = len(queue)
+            if num > 0:
+                is_updatable = max_deviation > int(abs(queue[-1] - new_val))
+                if not is_updatable:
+                    return avg                
+                if replace_last:
+                    new_avg = (avg * num - last_value + new_val) / num
+                elif num == max_num:
+                    first_sample = queue.popleft()
+                    new_avg = (avg * num + new_val - first_sample) / num
+                elif num < max_num:
+                    new_avg = (avg * num + new_val) / (num + 1)
+            queue.append(new_val)            
         return new_avg
+        
+       
 
     def _second_pass_filter(self, line):
         return self._coherence_filter(line) and self._distance_filter(line)
